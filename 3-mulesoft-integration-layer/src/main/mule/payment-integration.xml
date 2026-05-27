@@ -1,0 +1,125 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+      http://www.mulesoft.org/schema/mule/core
+      http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+      http://www.mulesoft.org/schema/mule/http
+      http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+      http://www.mulesoft.org/schema/mule/ee/core
+      http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <http:listener-config
+            name="HTTP_Listener_Config">
+
+        <http:listener-connection
+                host="0.0.0.0"
+                port="8085"/>
+
+    </http:listener-config>
+
+    <http:request-config
+            name="Paytm_Config">
+
+        <http:request-connection
+                host="localhost"
+                port="8081"/>
+
+    </http:request-config>
+
+    <http:request-config
+            name="Wallet_Config">
+
+        <http:request-connection
+                host="localhost"
+                port="8082"/>
+
+    </http:request-config>
+
+    <http:request-config
+            name="NetBanking_Config">
+
+        <http:request-connection
+                host="localhost"
+                port="8083"/>
+
+    </http:request-config>
+
+    <flow name="payment-main-flow">
+
+        <http:listener
+                config-ref="HTTP_Listener_Config"
+                path="/process-payment"/>
+
+        <logger
+                level="INFO"
+                message="Received Canonical Request: #[payload]"/>
+
+        <choice>
+
+            <when expression='#[payload.paymentMethod == "PAYTM"]'>
+
+                <flow-ref name="paytm-flow"/>
+
+            </when>
+
+            <when expression='#[payload.paymentMethod == "WALLET"]'>
+
+                <flow-ref name="wallet-flow"/>
+
+            </when>
+
+            <otherwise>
+
+                <flow-ref name="netbanking-flow"/>
+
+            </otherwise>
+
+        </choice>
+
+    </flow>
+
+    <flow name="paytm-flow">
+
+        <logger
+                level="INFO"
+                message="Routing to PayTM Provider"/>
+
+        <http:request
+                method="POST"
+                config-ref="Paytm_Config"
+                path="/paytm/process"/>
+
+    </flow>
+
+    <flow name="wallet-flow">
+
+        <logger
+                level="INFO"
+                message="Routing to Wallet Provider"/>
+
+        <http:request
+                method="POST"
+                config-ref="Wallet_Config"
+                path="/wallet/process"/>
+
+    </flow>
+
+    <flow name="netbanking-flow">
+
+        <logger
+                level="INFO"
+                message="Routing to NetBanking Provider"/>
+
+        <http:request
+                method="POST"
+                config-ref="NetBanking_Config"
+                path="/netbanking/process"/>
+
+    </flow>
+
+</mule>
